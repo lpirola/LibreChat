@@ -117,9 +117,9 @@ export default function PromptGenerator({
                   {prompts.map((prompt, index) => (
                     <div
                       key={`CustomQuestion-${prompt.topic}-${index}`}
-                      className={
-                        'animate__animated animate__fadeInLeft transform opacity-0 transition duration-700 ease-in-out'
-                      }
+                      // className={
+                      //   'animate__animated animate__fadeInLeft transform opacity-0 transition duration-700 ease-in-out'
+                      // }
                       style={{
                         animationDelay: `${index * 100}ms`, // Delay para cada pergunta aparecer um pouco depois
                       }}

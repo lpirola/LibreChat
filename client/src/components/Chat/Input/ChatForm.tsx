@@ -35,7 +35,7 @@ import SendButton from './SendButton';
 import Mention from './Mention';
 import store from '~/store';
 
-const ChatForm = ({ index = 0 }) => {
+const ChatForm = ({ index = 0, selectedPrompt, loadingPrompts, selectedQuestion, assistantQuestions, setAssistant }) => {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   useQueryParams({ textAreaRef });
@@ -54,6 +54,15 @@ const ChatForm = ({ index = 0 }) => {
   const [showMentionPopover, setShowMentionPopover] = useRecoilState(
     store.showMentionPopoverFamily(index),
   );
+
+  const [loadingQuestions, setLoadingQuestions] = useState<boolean>(false);
+
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [selectedResume, setSelectedResume] = useState('');
+  // console.log(assistantQuestions);
+  const handleResumeButtonClick = (value) => {
+    setSelectedResume(value);
+  };
 
   const chatDirection = useRecoilValue(store.chatDirection).toLowerCase();
   const isRTL = chatDirection === 'rtl';
@@ -108,6 +117,127 @@ const ChatForm = ({ index = 0 }) => {
     select: (data) => mergeFileConfig(data),
   });
 
+  const handleCreateQuestions = async () => {
+    const latestMessages = getMessages() ?? [];
+    const lastMessage = latestMessages
+      .filter((conversation) => conversation.isCreatedByUser == false)
+      .sort((a, b) => {
+        const dateA = new Date(a.updatedAt as string).getTime();
+        const dateB = new Date(b.updatedAt as string).getTime();
+        return dateB - dateA;
+      })
+      .slice(0, 1);
+
+    try {
+      let body = {
+        question: lastMessage[0]?.content[0]?.text.value,
+        assitantId: conversation?.assistant_id,
+      };
+      const response: AxiosResponse = await axios.post(
+        'https://automacao.iasolaris.com.br/webhook/0d035650-3fc3-4954-8f3d-3b83f3855bf8',
+        body,
+      );
+
+      const responseData = response.data;
+      const parsedContent: string[] = JSON.parse(responseData.content);
+      setQuestions(parsedContent);
+      setLoadingQuestions(false);
+    } catch (error) {
+      setLoadingQuestions(false);
+    }
+  };
+
+  const buttons = [
+    {
+      id: 'faq',
+      text: '❔ Perguntas Frequentes (FAQ)',
+      onClick: () => {
+        handleCreateQuestions();
+        setLoadingQuestions(true);
+      },
+      condition: conversation?.assistant_id !== 'asst_IHtM4Sr24vOGt3b434xV8vmW',
+    },
+    {
+      id: 'assistants',
+      text: '🤝 Preciso dos assistentes',
+      onClick: () => handleResumeButtonClick('Preciso dos assistentes'),
+      condition: !['asst_VMIucXRGsKSFRKzHHO7m9pNl', 'asst_ZSUVlFGrKY3fI5MrfBdS5ayg', 'asst_i8yF9pYTi0EbcmFaTFtUrD9S', 'asst_IHtM4Sr24vOGt3b434xV8vmW', 'asst_mLfYHanhjVXsHoctIJIWcE1h'].includes(conversation?.assistant_id),
+    },
+    {
+      id: 'cafuringa',
+      text: '🤵 Parecer do Dr. Cafuringa',
+      onClick: () => handleResumeButtonClick('Parecer do Dr. Cafuringa'),
+      condition: !['asst_i8yF9pYTi0EbcmFaTFtUrD9S', 'asst_mLfYHanhjVXsHoctIJIWcE1h'].includes(conversation?.assistant_id),
+    },
+    {
+      id: 'cafuringa',
+      text: '🤵 Parecer especialista',
+      onClick: () => handleResumeButtonClick('Gere uma tabela com 3 pareceres'),
+      condition: conversation?.assistant_id == 'asst_mLfYHanhjVXsHoctIJIWcE1h',
+    },
+    {
+      id: 'missing-info',
+      text: '🧐 Informações que faltam',
+      onClick: () => handleResumeButtonClick('Informações que faltam'),
+      condition: conversation?.assistant_id !== 'asst_IHtM4Sr24vOGt3b434xV8vmW',
+    },
+    {
+      id: 'simulate-case',
+      text: '🖊️ Simule um caso',
+      onClick: () => handleResumeButtonClick('Simule um caso'),
+      condition: conversation?.assistant_id !== 'asst_IHtM4Sr24vOGt3b434xV8vmW',
+    },
+    {
+      id: 'experts-citation',
+      text: '👨‍🎓 Citação de especialistas',
+      onClick: () => handleResumeButtonClick('Citação de especialistas'),
+      condition: !['asst_i8yF9pYTi0EbcmFaTFtUrD9S', 'asst_mLfYHanhjVXsHoctIJIWcE1h'].includes(conversation?.assistant_id),
+    },
+    {
+      id: 'different-approaches',
+      text: '💭 Abordagens diferentes',
+      onClick: () => handleResumeButtonClick('Abordagens diferentes'),
+      condition: conversation?.assistant_id !== 'asst_IHtM4Sr24vOGt3b434xV8vmW',
+    },
+    {
+      id: 'defense-citation',
+      text: '🛡️ Simular',
+      onClick: () => handleResumeButtonClick('Simular um cenário de defesa fiscal e testar argumentos contra possíveis contra-argumentos do Fisco.'),
+      condition: conversation?.assistant_id == 'asst_IHtM4Sr24vOGt3b434xV8vmW',
+    },
+    {
+      id: 'documents',
+      text: '📁 Documento',
+      onClick: () => handleResumeButtonClick('Fazer o documento de petições para impugnação, recurso, revisão administrativa. Ou outro com os dados do caso e no padrão normatizado no contexto apresentado.'),
+      condition: conversation?.assistant_id == 'asst_IHtM4Sr24vOGt3b434xV8vmW',
+    },
+    {
+      id: 'plans',
+      text: '💡 Estratégias',
+      onClick: () => handleResumeButtonClick('Listar diferentes estratégias para impugnação ou recurso.'),
+      condition: conversation?.assistant_id == 'asst_IHtM4Sr24vOGt3b434xV8vmW',
+    },
+    {
+      id: 'find-erros',
+      text: '🚨 Apontar Erros',
+      onClick: () => handleResumeButtonClick('Apontar erros comuns da defesa e do fisco para este caso. Formate em tabela em ordem de poderação'),
+      condition: conversation?.assistant_id == 'asst_IHtM4Sr24vOGt3b434xV8vmW',
+    },
+    {
+      id: 'complement-defense',
+      text: '📑 Complementar Defesa',
+      onClick: () => handleResumeButtonClick('Sugerir argumentos adicionais para reforçar a defesa apresentada'),
+      condition: conversation?.assistant_id == 'asst_IHtM4Sr24vOGt3b434xV8vmW',
+    },
+    {
+      id: 'reverse-defense',
+      text: '🔄 "Intepretação ao contrário"',
+      onClick: () => handleResumeButtonClick('Faça "Intepretação ao contrário" de uma norma ou jurisdição'),
+      condition: conversation?.assistant_id == 'asst_IHtM4Sr24vOGt3b434xV8vmW',
+    },
+  ];
+
+
   const endpointFileConfig = fileConfig.endpoints[endpoint ?? ''];
   const invalidAssistant = useMemo(
     () =>
@@ -153,6 +283,45 @@ const ChatForm = ({ index = 0 }) => {
     ? `pr-${uploadActive ? '12' : '4'} pl-12`
     : `pl-${uploadActive ? '12' : '4'} pr-12`;
 
+
+  useEffect(() => {
+    if (selectedPrompt) {
+      const data = {
+        text: `Regime: ${selectedPrompt.regime};
+                CNAE: ${selectedPrompt.cnae};
+                Tópico: ${selectedPrompt.topic};
+                ${selectedPrompt.question}`,
+      };
+      submitMessage(data);
+      loadingPrompts(false);
+    }
+  }, [selectedPrompt]);
+
+  useEffect(() => {
+    if (selectedQuestion) {
+      const data = {
+        text: selectedQuestion,
+      };
+      submitMessage(data);
+    }
+  }, [selectedQuestion]);
+
+  useEffect(() => {
+    if (selectedResume !== '') {
+      const data = {
+        text: selectedResume,
+      };
+      submitMessage(data);
+      setSelectedResume('');
+    }
+  }, [selectedResume]);
+
+  useEffect(() => {
+    setQuestions([]);
+    setLoadingQuestions(false);
+  }, [conversation?.conversationId]);
+
+
   return (
     <form
       onSubmit={methods.handleSubmit((data) => submitMessage(data))}
@@ -161,6 +330,30 @@ const ChatForm = ({ index = 0 }) => {
         maximizeChatSpace ? 'w-full max-w-full' : 'md:max-w-2xl xl:max-w-3xl',
       )}
     >
+      {loadingQuestions ? (
+        <h1 className="text-center text-2xl font-bold dark:text-white">
+          Aguarde elaborar as perguntas...
+        </h1>
+      ) : (
+        <div className="relative flex flex-col items-center justify-center gap-2">
+          {questions.map((item, index) => (
+            <button
+              key={index}
+              className="border-black-400 dark:border-white-400 flex items-center rounded-full border px-4 py-2 text-black hover:bg-yellow-400 dark:text-white dark:hover:text-black"
+              onClick={() => {
+                setQuestions([]);
+                const data = {
+                  text: item,
+                };
+                submitMessage(data);
+              }}
+            >
+              <span className="text-black dark:text-white dark:hover:text-black">{item}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="relative flex h-full flex-1 items-stretch md:flex-col">
         <div className="flex w-full items-center">
           {showPlusPopover && !isAssistantsEndpoint(endpoint) && (

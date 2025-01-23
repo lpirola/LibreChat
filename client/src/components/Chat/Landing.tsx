@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { EModelEndpoint, Constants } from 'librechat-data-provider';
+import { EModelEndpoint, Constants, AssistantsEndpoint } from 'librechat-data-provider';
 import { useGetEndpointsQuery, useGetStartupConfig } from 'librechat-data-provider/react-query';
 import type * as t from 'librechat-data-provider';
 import type { ReactNode } from 'react';
@@ -18,20 +18,21 @@ import { LandingAssistContainer } from '../LandingAssistContainer';
 import HelpDialog from './HelpDialog';
 import { AssistantInfo } from '~/hooks/useAssistantsInfo';
 import { CurrentAssistant } from '../ui/CurrentAssistant';
+import { AssistantCard } from '../ui/AssistantCard'
 
-const renderAssistants = (list: AssistantInfo[]) => {
-  return list.map((assistant, index) => (
-    <AssistantCard
-      id={assistant.Id}
-      name={assistant.Nome}
-      key={index}
-      handleSelectAssistant={onSelect}
-      setCurrentAssistId={setCurrentAssistId}
-    />
-  ));
-};
-
-export default function Landing({ Header }: { Header?: ReactNode }) {
+export default function Landing({
+  Header,
+  setSelectedAssist,
+  setSelectedPrompt,
+  setCurrentAssistId,
+  setSelectedQuestion,
+}: {
+  Header?: ReactNode;
+  setSelectedPrompt: React.Dispatch<React.SetStateAction<Prompt | null>>;
+  setSelectedAssist: React.Dispatch<React.SetStateAction<boolean>>;
+  setCurrentAssistId: React.Dispatch<React.SetStateAction<string>>;
+  setSelectedQuestion: React.Dispatch<React.SetStateAction<string | null>>;
+}) {
   const { conversation } = useChatContext();
   const agentsMap = useAgentsMapContext();
   const assistantMap = useAssistantsMapContext();
@@ -51,8 +52,7 @@ export default function Landing({ Header }: { Header?: ReactNode }) {
   }
 
   const iconURL = conversation?.iconURL;
-  endpoint = getIconEndpoint({ endpointsConfig, iconURL, endpoint });
-  const { data: documentsMap = new Map() } = useGetAssistantDocsQuery(endpoint, {
+  const { data: documentsMap = new Map() } = useGetAssistantDocsQuery(getIconEndpoint({ endpointsConfig, iconURL, endpoint }), {
     select: (data) => new Map(data.map((dbA) => [dbA.assistant_id, dbA])),
   });
 
@@ -106,7 +106,21 @@ export default function Landing({ Header }: { Header?: ReactNode }) {
     return localize('com_nav_welcome_message');
   };
 
+  const renderAssistants = (list: AssistantInfo[]) => {
+    return list.map((assistant, index) => (
+      <AssistantCard
+        id={assistant.Id}
+        name={assistant.Nome}
+        key={index}
+        handleSelectAssistant={onSelect}
+        setCurrentAssistId={setCurrentAssistId}
+      />
+    ));
+  };
+
   const assistantId = assistant_id || null;
+
+  // const isAssistant = isAssistantsEndpoint(endpoint);
   const assistant = isAssistant ? assistantMap?.[endpoint || ''][assistantId ?? ''] : undefined;
   const { onSelect } = useSelectAssistant(endpoint as AssistantsEndpoint);
   const [assistantList] = useLocalStorage<AssistantInfo[] | null>('AssistantList', []);
@@ -119,7 +133,6 @@ export default function Landing({ Header }: { Header?: ReactNode }) {
       .filter((q) => q.trim() !== '')
       .map((question) => question.replace(/^\d+\.\s*/, '')) || []);
   const [shuffleToggle, setShuffleToggle] = useState<boolean>(false);
-  const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const storedDontShowAgain = localStorage.getItem('dontShowAgain');
 
   const others = [
@@ -300,9 +313,9 @@ export default function Landing({ Header }: { Header?: ReactNode }) {
   };
 
   return (
-    <div className="relative h-full">
+    <div className="relative">
       <div className="absolute left-0 right-0">{Header != null ? Header : null}</div>
-      <div className="flex h-full flex-col items-center justify-center">
+      <div className="flex flex-col items-center justify-center">
         <div className={cn('relative h-12 w-12', name && avatar ? 'mb-0' : 'mb-3')}>
           <ConvoIcon
             agentsMap={agentsMap}
@@ -323,7 +336,7 @@ export default function Landing({ Header }: { Header?: ReactNode }) {
             </TooltipAnchor>
           ) : null}
         </div>
-        {name ? (
+        {/* {name ? (
           <div className="flex flex-col items-center gap-0 p-2">
             <div className="text-center text-2xl font-medium dark:text-white">{name}</div>
             <div className="max-w-md text-center text-sm font-normal text-text-primary ">
@@ -331,13 +344,13 @@ export default function Landing({ Header }: { Header?: ReactNode }) {
             </div>
             {/* <div className="mt-1 flex items-center gap-1 text-token-text-tertiary">
             <div className="text-sm text-token-text-tertiary">By Daniel Avila</div>
-          </div> */}
+          </div> }
           </div>
         ) : (
           <h2 className="mb-5 max-w-[75vh] px-12 text-center text-lg font-medium dark:text-white md:px-0 md:text-2xl">
             {getWelcomeMessage()}
           </h2>
-        )}
+        )} */}
         <div className="mx-[5vw]">
           {AssistentesGrid(renderAssistants(assistantList || []), onSelect)}
         </div>
