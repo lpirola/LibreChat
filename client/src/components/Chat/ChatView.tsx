@@ -20,29 +20,49 @@ import { Prompt } from './Messages/PromptGenerator';
 import GetAssistantsInfo, { AssistantInfo } from '~/hooks/useAssistantsInfo';
 import AssistantSelector from './AssistantSelector';
 
-function ChatView({ index = 0 }: { index?: number }) {
+// Types and Interfaces
+interface ChatViewProps {
+  index?: number;
+}
+
+interface AssistantQuestion {
+  text: string;
+  id: string;
+}
+
+// Component
+function ChatView({ index = 0 }: ChatViewProps) {
+  // Hooks and Context
   const { conversationId } = useParams();
+  const fileMap = useFileMapContext();
+  const methods = useForm<ChatFormValues>({
+    defaultValues: { text: '' },
+  });
+
+  // Recoil State
   const rootSubmission = useRecoilValue(store.submissionByIndex(index));
   const addedSubmission = useRecoilValue(store.submissionByIndex(index + 1));
 
+  // Local State
   const [loadingPrompts, setLoadingPrompts] = useState<boolean>(false);
   const [isAssistantSelected, setIsAssistantSelected] = useState<boolean>(false);
   const [currentAssistId, setCurrentAssistId] = useState<string>('');
-
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
 
+  // Assistant Data
   const [assistantList] = useLocalStorage<AssistantInfo[] | null>('AssistantList', []);
-  const currentAssistant = assistantList?.find((item) => item.Id == currentAssistId);
-  const questions =
+  const currentAssistant = assistantList?.find((item) => item.Id === currentAssistId);
+  const questions = useMemo(() => 
     currentAssistant?.['Perguntas do dia']
       ?.split('\n')
       .filter((q) => q.trim() !== '')
       .map((question) => question.replace(/^\d+\.\s*/, ''))
-      .slice(0, 2) || [];
+      .slice(0, 2) || [],
+    [currentAssistant]
+  );
 
-  const fileMap = useFileMapContext();
-
+  // Messages Data
   const { data: messagesTree = null, isLoading } = useGetMessagesByConvoId(conversationId ?? '', {
     select: useCallback(
       (data: TMessage[]) => {
@@ -54,67 +74,76 @@ function ChatView({ index = 0 }: { index?: number }) {
     enabled: !!fileMap,
   });
 
-  const updatedMessagesTree = messagesTree?.map((message) => {
-    if (
-      message.text.includes('CNAE:') &&
-      message.parentMessageId === '00000000-0000-0000-0000-000000000000'
-    ) {
-      return {
-        ...message,
-        text: 'Gerando...',
-      };
-    }
+  const updatedMessagesTree = useMemo(() => 
+    messagesTree?.map((message) => {
+      if (
+        message.text.includes('CNAE:') &&
+        message.parentMessageId === '00000000-0000-0000-0000-000000000000'
+      ) {
+        return {
+          ...message,
+          text: 'Gerando...',
+        };
+      }
+      return message;
+    }),
+    [messagesTree]
+  );
 
-    return message;
-  });
-
+  // Chat Helpers and Effects
   const chatHelpers = useChatHelpers(index, conversationId);
   const addedChatHelpers = useAddedResponse({ rootIndex: index });
-
-  GetPromptFiltersLists();
-  GetAssistantsInfo();
 
   useSSE(rootSubmission, chatHelpers, false);
   useSSE(addedSubmission, addedChatHelpers, true);
 
-  const methods = useForm<ChatFormValues>({
-    defaultValues: { text: '' },
-  });
+  // Initialize Data
+  GetPromptFiltersLists();
+  GetAssistantsInfo();
 
+  // Effects
   useEffect(() => {
     if (!isAssistantSelected) {
       setIsAssistantSelected(true);
     }
   }, [isAssistantSelected]);
 
-  function shuffleArray(array: []) {
-    for (let i = array.length - 1; i > 0; i--) {
+  // Helper Functions
+  const shuffleArray = useCallback((array: []) => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
     }
-    return array;
-  }
+    return newArray;
+  }, []);
 
-  let content: JSX.Element | null | undefined;
-  if (isLoading && conversationId !== 'new') {
-    content = (
-      <div className="flex h-screen items-center justify-center">
-        <Spinner className="opacity-0" />
-      </div>
-    );
-  } else if (messagesTree && messagesTree.length !== 0) {
-    content = <MessagesView messagesTree={updatedMessagesTree} Header={<Header />} />;
-  } else if (conversationId == 'new' && !isAssistantSelected) {
-    content = (
-      <AssistantSelector
-        Header={<Header />}
-        setIsAssistantSelected={setIsAssistantSelected}
-        setCurrentAssistId={setCurrentAssistId}
-        setSelectedQuestion={setSelectedQuestion}
-      />
-    );
-  } else {
-    content = (
+  // Render Content
+  const renderContent = useCallback(() => {
+    if (isLoading && conversationId !== 'new') {
+      return (
+        <div className="flex h-screen items-center justify-center">
+          <Spinner className="opacity-0" />
+        </div>
+      );
+    }
+
+    if (messagesTree && messagesTree.length !== 0) {
+      return <MessagesView messagesTree={updatedMessagesTree} Header={<Header />} />;
+    }
+
+    if (conversationId === 'new' && !isAssistantSelected) {
+      return (
+        <AssistantSelector
+          Header={<Header />}
+          setIsAssistantSelected={setIsAssistantSelected}
+          setCurrentAssistId={setCurrentAssistId}
+          setSelectedQuestion={setSelectedQuestion}
+        />
+      );
+    }
+
+    return (
       <Landing
         Header={<Header />}
         setSelectedAssist={setIsAssistantSelected}
@@ -123,7 +152,9 @@ function ChatView({ index = 0 }: { index?: number }) {
         setSelectedQuestion={setSelectedQuestion}
       />
     );
-  }
+  }, [isLoading, conversationId, messagesTree, isAssistantSelected, updatedMessagesTree]);
+
+  const content = renderContent();
 
 
   return (
