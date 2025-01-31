@@ -19,9 +19,9 @@ export default function AssistantSelector({
   setCurrentAssistId: any;
 }) {
   const { conversation } = useChatContext();
-  const { endpoint } = conversation ?? {};
+  const { model: _model, endpoint: _endpoint } = conversation ?? {};
 
-  const { onSelect } = useSelectAssistant(endpoint as AssistantsEndpoint);
+  const { onSelect } = useSelectAssistant(_endpoint as AssistantsEndpoint);
 
   const [assistantList] = useLocalStorage<AssistantInfo[] | null>('AssistantList', []);
   const [hoveredAssistant, setHoveredAssistant] = useState<string>();
@@ -128,7 +128,7 @@ export default function AssistantSelector({
                   <div
                     key={`${assistant.Nome}-${index}`}
                     className={
-                      'animate__animated animate__fadeInLeft transform opacity-0 transition duration-700 ease-in-out'
+                      'animate__animated animate__fadeInLeft transform transition duration-700 ease-in-out'
                     }
                     style={{
                       animationDelay: `${index * 100}ms`,
@@ -151,7 +151,7 @@ export default function AssistantSelector({
 
   return (
     <div className="flex-1 overflow-hidden overflow-y-auto">
-      <div className="ml-[5vw] mr-[5vw]">
+      <div className="ml-[25px] mr-[25px]">
         {AssistentesGrid(renderAssistants(assistantList), SelectAssistant)}
       </div>
       <div className="ml-[25px] mr-[25px] grid grid-cols-3 gap-4 overflow-y-scroll">

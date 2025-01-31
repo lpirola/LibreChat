@@ -10,15 +10,13 @@ const PromptCard = ({
   handleSelectQuestion: any;
 }) => {
   return (
-    <button
-      onClick={() => handleSelectQuestion(assistant_id, question)}
-    >
-      <div className="flex-1
+      <span className="flex-1
       transform rounded-lg text-left text-black p-2 mb-1
       transition duration-500 hover:scale-110">
-        <button className="bg-transparent border-none text-blue-500 underline cursor-pointer text-left">{question}</button>
-      </div>
-    </button>
+        <button
+         onClick={() => handleSelectQuestion(assistant_id, question)}
+         className="bg-transparent border-none text-blue-500 underline cursor-pointer text-left">{question}</button>
+      </span>
   );
 };
 

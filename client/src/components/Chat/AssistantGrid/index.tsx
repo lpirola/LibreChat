@@ -7,7 +7,7 @@ export const AssistentesGrid = (list: any[], handleSelectAssistant: any) => {
   const [openContent, setOpenContent] = useState(false);
 
   const handleOpenContent = () => {
-    console.log(openContent);
+    //console.log(openContent);
     setOpenContent(!openContent);
   };
 
@@ -28,7 +28,7 @@ export const AssistentesGrid = (list: any[], handleSelectAssistant: any) => {
   const OTHER_Assistants = list.filter((item) => OTHER_IDS.includes(item.props.id));
 
   return (
-    <div className="relative p-6">
+    <div className="relative">
       <AssistHeader
         handleSelectAssistant={handleSelectAssistant}
         handleOpenContent={handleOpenContent}

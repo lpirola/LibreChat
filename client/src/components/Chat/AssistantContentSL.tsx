@@ -103,7 +103,7 @@ export default function AssistantContent({
         .map((question, index) => (
           <div
             key={`CustomQuestion-${index}-${assistant_id}-${shuffleToggle}`}
-            className="animate__animated animate__fadeInLeft transform opacity-0 transition duration-700 ease-in-out grid grid-cols-2 gap-10"
+            className="animate__animated animate__fadeInLeft transform transition duration-700 ease-in-out grid grid-cols-2 gap-10"
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <div className={`flex items-center space-x-4 rounded-lg border p-4 shadow-md transition-shadow duration-300 dark:bg-transparent ${
