@@ -19,6 +19,7 @@ import store from '~/store';
 import { Prompt } from './Messages/PromptGenerator';
 import GetAssistantsInfo, { AssistantInfo } from '~/hooks/useAssistantsInfo';
 import AssistantSelector from './AssistantSelector';
+import { useChatContext } from '~/Providers';
 
 // Types and Interfaces
 interface ChatViewProps {
@@ -49,6 +50,9 @@ function ChatView({ index = 0 }: ChatViewProps) {
   const [currentAssistId, setCurrentAssistId] = useState<string>('');
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
+  const { conversation } = useChatContext();
+  
+  let { endpoint, assistant_id } = conversation ?? { endpoint: '', assistant_id: null };
 
   // Assistant Data
   const [assistantList] = useLocalStorage<AssistantInfo[] | null>('AssistantList', []);
@@ -119,7 +123,7 @@ function ChatView({ index = 0 }: ChatViewProps) {
   }, []);
 
   // Render Content
-  const renderContent = useCallback(() => {
+  const content = (() => {
     if (isLoading && conversationId !== 'new') {
       return (
         <div className="flex h-screen items-center justify-center">
@@ -132,7 +136,7 @@ function ChatView({ index = 0 }: ChatViewProps) {
       return <MessagesView messagesTree={updatedMessagesTree} Header={<Header />} />;
     }
 
-    if (conversationId === 'new' && !isAssistantSelected) {
+    if (conversationId === 'new' && !currentAssistant) {
       return (
         <AssistantSelector
           Header={<Header />}
@@ -152,10 +156,7 @@ function ChatView({ index = 0 }: ChatViewProps) {
         setSelectedQuestion={setSelectedQuestion}
       />
     );
-  }, [isLoading, conversationId, messagesTree, isAssistantSelected, updatedMessagesTree]);
-
-  const content = renderContent();
-
+  })();
 
   return (
     <ChatFormProvider {...methods}>
