@@ -59,7 +59,7 @@ const ChatForm = ({ index = 0, selectedPrompt, loadingPrompts, selectedQuestion,
 
   const [questions, setQuestions] = useState<string[]>([]);
   const [selectedResume, setSelectedResume] = useState('');
-  // console.log(assistantQuestions);
+
   const handleResumeButtonClick = (value) => {
     setSelectedResume(value);
   };
@@ -87,8 +87,10 @@ const ChatForm = ({ index = 0, selectedPrompt, loadingPrompts, selectedQuestion,
     conversation,
     isSubmitting,
     filesLoading,
+    setFilesLoading,
     newConversation,
     handleStopGenerating,
+    getMessages,
   } = useChatContext();
   const methods = useChatFormContext();
   const {
@@ -321,15 +323,9 @@ const ChatForm = ({ index = 0, selectedPrompt, loadingPrompts, selectedQuestion,
     setLoadingQuestions(false);
   }, [conversation?.conversationId]);
 
-
+  
   return (
-    <form
-      onSubmit={methods.handleSubmit((data) => submitMessage(data))}
-      className={cn(
-        'mx-auto flex flex-row gap-3 pl-2 transition-all duration-200 last:mb-2',
-        maximizeChatSpace ? 'w-full max-w-full' : 'md:max-w-2xl xl:max-w-3xl',
-      )}
-    >
+    <>
       {loadingQuestions ? (
         <h1 className="text-center text-2xl font-bold dark:text-white">
           Aguarde elaborar as perguntas...
@@ -353,106 +349,131 @@ const ChatForm = ({ index = 0, selectedPrompt, loadingPrompts, selectedQuestion,
           ))}
         </div>
       )}
-
-      <div className="relative flex h-full flex-1 items-stretch md:flex-col">
-        <div className="flex w-full items-center">
-          {showPlusPopover && !isAssistantsEndpoint(endpoint) && (
-            <Mention
-              setShowMentionPopover={setShowPlusPopover}
-              newConversation={generateConversation}
-              textAreaRef={textAreaRef}
-              commandChar="+"
-              placeholder="com_ui_add_model_preset"
-              includeAssistants={false}
-            />
-          )}
-          {showMentionPopover && (
-            <Mention
-              setShowMentionPopover={setShowMentionPopover}
-              newConversation={newConversation}
-              textAreaRef={textAreaRef}
-            />
-          )}
-          <PromptsCommand index={index} textAreaRef={textAreaRef} submitPrompt={submitPrompt} />
-          <div className="transitional-all relative flex w-full flex-grow flex-col overflow-hidden rounded-3xl bg-surface-tertiary text-text-primary duration-200">
-            <TextareaHeader addedConvo={addedConvo} setAddedConvo={setAddedConvo} />
-            <FileFormWrapper disableInputs={disableInputs}>
-              {endpoint && (
-                <>
-                  <CollapseChat
-                    isCollapsed={isCollapsed}
-                    isScrollable={isScrollable}
-                    setIsCollapsed={setIsCollapsed}
-                  />
-                  <TextareaAutosize
-                    {...registerProps}
-                    ref={(e) => {
-                      ref(e);
-                      textAreaRef.current = e;
-                    }}
-                    disabled={disableInputs}
-                    onPaste={handlePaste}
-                    onKeyDown={handleKeyDown}
-                    onKeyUp={handleKeyUp}
-                    onHeightChange={() => {
-                      if (textAreaRef.current) {
-                        const scrollable = checkIfScrollable(textAreaRef.current);
-                        setIsScrollable(scrollable);
-                      }
-                    }}
-                    onCompositionStart={handleCompositionStart}
-                    onCompositionEnd={handleCompositionEnd}
-                    id={mainTextareaId}
-                    tabIndex={0}
-                    data-testid="text-input"
-                    rows={1}
-                    onFocus={() => isCollapsed && setIsCollapsed(false)}
-                    onClick={() => isCollapsed && setIsCollapsed(false)}
-                    style={{ height: 44, overflowY: 'auto' }}
-                    className={cn(
-                      baseClasses,
-                      speechClass,
-                      removeFocusRings,
-                      'transition-[max-height] duration-200',
-                    )}
-                  />
-                </>
-              )}
-            </FileFormWrapper>
-            {SpeechToText && (
-              <AudioRecorder
-                isRTL={isRTL}
-                methods={methods}
-                ask={submitMessage}
-                textAreaRef={textAreaRef}
-                disabled={!!disableInputs}
-                isSubmitting={isSubmitting}
-              />
-            )}
-            {TextToSpeech && automaticPlayback && <StreamAudio index={index} />}
-          </div>
-          <div
-            className={cn(
-              'mb-[5px] ml-[8px] flex flex-col items-end justify-end',
-              isRTL && 'order-first mr-[8px]',
-            )}
-            style={{ alignSelf: 'flex-end' }}
-          >
-            {(isSubmitting || isSubmittingAdded) && (showStopButton || showStopAdded) ? (
-              <StopButton stop={handleStopGenerating} setShowStopButton={setShowStopButton} />
-            ) : (
-              endpoint && (
-                <SendButton
-                  ref={submitButtonRef}
-                  control={methods.control}
-                  disabled={!!(filesLoading || isSubmitting || disableInputs)}
-                />
-              )
-            )}
+      {conversation?.conversationId !== 'new' && (
+        <div className="flex items-center justify-center">
+          <div className="flex w-[100vw] flex-wrap items-center justify-center gap-2 rounded-md p-4">
+            {buttons
+              .filter(button => button.condition)
+              .map(button => (
+                <button
+                  key={button.id}
+                  className="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200 hover:text-black"
+                  onClick={button.onClick}
+                >
+                  {button.text}
+                </button>
+              ))}
           </div>
         </div>
-      </div>
-    </form>
+      )}
+
+      <form
+      onSubmit={methods.handleSubmit((data) => submitMessage(data))}
+      className={cn(
+        'mx-auto flex flex-row gap-3 pl-2 transition-all duration-200 last:mb-2',
+        maximizeChatSpace ? 'w-full max-w-full' : 'md:max-w-2xl xl:max-w-3xl',
+      )}  
+      >
+        <div className="relative flex h-full flex-1 items-stretch md:flex-col">
+          <div className="flex w-full items-center">
+            {showPlusPopover && !isAssistantsEndpoint(endpoint) && (
+              <Mention
+                setShowMentionPopover={setShowPlusPopover}
+                newConversation={generateConversation}
+                textAreaRef={textAreaRef}
+                commandChar="+"
+                placeholder="com_ui_add_model_preset"
+                includeAssistants={false}
+              />
+            )}
+            {showMentionPopover && (
+              <Mention
+                setShowMentionPopover={setShowMentionPopover}
+                newConversation={newConversation}
+                textAreaRef={textAreaRef}
+              />
+            )}
+            <PromptsCommand index={index} textAreaRef={textAreaRef} submitPrompt={submitPrompt} />
+            <div className="transitional-all relative flex w-full flex-grow flex-col overflow-hidden rounded-3xl bg-surface-tertiary text-text-primary duration-200">
+              <TextareaHeader addedConvo={addedConvo} setAddedConvo={setAddedConvo} />
+              <FileFormWrapper disableInputs={disableInputs}>
+                {endpoint && (
+                  <>
+                    <CollapseChat
+                      isCollapsed={isCollapsed}
+                      isScrollable={isScrollable}
+                      setIsCollapsed={setIsCollapsed}
+                    />
+                    <TextareaAutosize
+                      {...registerProps}
+                      ref={(e) => {
+                        ref(e);
+                        textAreaRef.current = e;
+                      }}
+                      disabled={disableInputs}
+                      onPaste={handlePaste}
+                      onKeyDown={handleKeyDown}
+                      onKeyUp={handleKeyUp}
+                      onHeightChange={() => {
+                        if (textAreaRef.current) {
+                          const scrollable = checkIfScrollable(textAreaRef.current);
+                          setIsScrollable(scrollable);
+                        }
+                      }}
+                      onCompositionStart={handleCompositionStart}
+                      onCompositionEnd={handleCompositionEnd}
+                      id={mainTextareaId}
+                      tabIndex={0}
+                      data-testid="text-input"
+                      rows={1}
+                      onFocus={() => isCollapsed && setIsCollapsed(false)}
+                      onClick={() => isCollapsed && setIsCollapsed(false)}
+                      style={{ height: 44, overflowY: 'auto' }}
+                      className={cn(
+                        baseClasses,
+                        speechClass,
+                        removeFocusRings,
+                        'transition-[max-height] duration-200',
+                      )}
+                    />
+                  </>
+                )}
+              </FileFormWrapper>
+              {SpeechToText && (
+                <AudioRecorder
+                  isRTL={isRTL}
+                  methods={methods}
+                  ask={submitMessage}
+                  textAreaRef={textAreaRef}
+                  disabled={!!disableInputs}
+                  isSubmitting={isSubmitting}
+                />
+              )}
+              {TextToSpeech && automaticPlayback && <StreamAudio index={index} />}
+            </div>
+            <div
+              className={cn(
+                'mb-[5px] ml-[8px] flex flex-col items-end justify-end',
+                isRTL && 'order-first mr-[8px]',
+              )}
+              style={{ alignSelf: 'flex-end' }}
+            >
+              {(isSubmitting || isSubmittingAdded) && (showStopButton || showStopAdded) ? (
+                <StopButton stop={handleStopGenerating} setShowStopButton={setShowStopButton} />
+              ) : (
+                endpoint && (
+                  <SendButton
+                    ref={submitButtonRef}
+                    control={methods.control}
+                    disabled={!!(filesLoading || isSubmitting || disableInputs)}
+                  />
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      </form>
+    </>
   );
 };
 
