@@ -6,12 +6,17 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>LibreChat</title>
+    <title>IA Solaris</title>
     <link rel="shortcut icon" href="#" />
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon-180x180.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
     <style>
       html,
       body {
@@ -53,6 +58,15 @@
     <div id="root">
       <div id="loading-container"></div>
     </div>
+    <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
+    <df-messenger
+      chat-icon="https:&#x2F;&#x2F;cdn-icons-png.flaticon.com&#x2F;512&#x2F;1028&#x2F;1028931.png"
+      intent="WELCOME"
+      chat-title="SuporteIA"
+      agent-id="5a61f4f1-70b2-49d2-b913-2e594c3242fb"
+      language-code="pt-br"
+    ></df-messenger>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
